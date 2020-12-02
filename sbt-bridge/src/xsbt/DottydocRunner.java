@@ -80,7 +80,7 @@ public class DottydocRunner {
       Method processMethod = dottydocMainClass.getMethod("process", args.getClass(), Context.class); // args.getClass() is String[]
       Reporter reporter = (Reporter) processMethod.invoke(null, args, ctx);
       if (reporter.hasErrors())
-        throw new InterfaceCompileFailed(args, new xsbti.Problem[0]);
+        throw new InterfaceCompileFailed(args, new xsbti.Problem[0], "DottyDoc Compilation Failed");
     } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
       throw new RuntimeException(e);
     }

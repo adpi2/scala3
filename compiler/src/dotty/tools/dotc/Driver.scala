@@ -13,6 +13,7 @@ import dotty.tools.io.File
 import reporting._
 import core.Decorators._
 import config.Feature
+import util.SourceFile
 
 import scala.util.control.NonFatal
 import fromtasty.{TASTYCompiler, TastyFileUtil}
@@ -31,11 +32,15 @@ class Driver {
 
   protected def emptyReporter: Reporter = new StoreReporter(null)
 
-  protected def doCompile(compiler: Compiler, fileNames: List[String])(using Context): Reporter =
-    if (fileNames.nonEmpty)
+  protected def doCompile(compiler: Compiler, fileNames: List[String])(using ctx: Context): Reporter =
+    val sources = fileNames.map(ctx.getSource(_))
+    doCompileSources(compiler, sources)
+
+  protected def doCompileSources(compiler: Compiler, sources: List[SourceFile])(using Context): Reporter =
+    if (sources.nonEmpty)
       try
         val run = compiler.newRun
-        run.compile(fileNames)
+        run.compileSources(sources)
 
         def finish(run: Run)(using Context): Unit =
           run.printSummary()
@@ -50,16 +55,14 @@ class Driver {
 
         finish(run)
       catch
-        case ex: FatalError  =>
+        case ex: FatalError =>
           report.error(ex.getMessage) // signals that we should fail compilation.
         case ex: TypeError =>
-          println(s"${ex.toMessage} while compiling ${fileNames.mkString(", ")}")
-          throw ex
+          println(s"${ex.toMessage} while compiling ${sources.map(_.name).mkString(", ")}")
         case ex: Throwable =>
-          println(s"$ex while compiling ${fileNames.mkString(", ")}")
+          println(s"$ex while compiling ${sources.map(_.name).mkString(", ")}")
           throw ex
     ctx.reporter
-  end doCompile
 
   protected def initCtx: Context = (new ContextBase).initialCtx
 
