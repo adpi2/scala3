@@ -1595,7 +1595,7 @@ trait BCodeBodyBuilder extends BCodeSkelBuilder {
       /* True if the equality comparison is between values that require the use of the rich equality
        * comparator (scala.runtime.Comparator.equals). This is the case when either side of the
        * comparison might have a run-time type subtype of java.lang.Number or java.lang.Character.
-       * When it is statically known that both sides are equal and subtypes of Number of Character,
+       * When it is statically known dthat both sides are equal and subtypes of Number of Character,
        * not using the rich equality is possible (their own equals method will do ok.)
        */
       val mustUseAnyComparator: Boolean = {
