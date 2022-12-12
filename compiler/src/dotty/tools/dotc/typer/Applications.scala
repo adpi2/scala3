@@ -616,8 +616,8 @@ trait Applications extends Compatibility {
                     harmonizeSeq(la :+ x1, elemFormal)
                     makeSeqLiteral(la.length + 1, elemFormal)
                     concatVararg(xs, Nil, counter + 1)  
-                else if (isVarArg(x1)) then  /
-                  val seqElemFormal = defn.SeqType.appliedTo(elemFormal)  
+                else if (isVarArg(x1)) then  
+                  val seqElemFormal = defn.SeqType.appliedTo(elemFormal) 
                   addArg(typedArg(x1, seqElemFormal), seqElemFormal)
                   concatVararg(xs, Nil, counter + 1)  
               case Nil => 
@@ -828,17 +828,13 @@ trait Applications extends Compatibility {
         else t
 
       val varArgTrees = typedArgBuf.takeRight(n)
-      println(s"type = ${varArgTrees.getClass}")
       typedArgBuf.dropRightInPlace(n)
-      val repeatedarg = seqToRepeated(
-                          varArgTrees.reduce{
-                            (lh, rh) => removeRepeated(lh).select(defn.Seq_++).appliedToType(elemFormal).appliedTo(removeRepeated(rh))})
+      val repeatedarg =
+        seqToRepeated(varArgTrees.reduce{
+          (lh, rh) => removeRepeated(lh).select(defn.Seq_++).
+            appliedToType(elemFormal).appliedTo(removeRepeated(rh))})
       typedArgBuf += repeatedarg
     
-
-
-
-// x1.asInstanceOf[Typed].expr
 
     def harmonizeArgs(args: List[TypedArg]): List[Tree] =
       // harmonize args only if resType depends on parameter types
