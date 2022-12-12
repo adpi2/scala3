@@ -5,12 +5,11 @@ import org.junit.Test
 import org.junit.Ignore
 import java.nio.file.Paths
 
-class Playground:
+@Ignore class Playground:
   import TestConfiguration._
   import CompilationTests._
   
 
   @Test def example: Unit =
     implicit val testGroup: TestGroup = TestGroup("playground")
-    // println(Paths.get(".").toAbsolutePath())
-    compileFile("../tests/pos/varargs.scala", defaultOptions).checkCompile()
+    compileFile("tests/playground/example.scala", defaultOptions).checkCompile()

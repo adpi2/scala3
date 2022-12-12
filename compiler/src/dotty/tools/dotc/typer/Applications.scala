@@ -392,11 +392,6 @@ trait Applications extends Compatibility {
      */
     protected def makeSeqLiteral(n: Int, elemFormal: Type): Unit
 
-    /** //TODO
-     * 
-     */
-    // protected def harmonizeSeq(args: Arg, elemFormal: Type): Unit
-
     /** combineargs 
      */
     protected def argCombineVarArg(n: Int, elemFormal: Type): Unit
@@ -604,6 +599,33 @@ trait Applications extends Compatibility {
                   }
             typedArgs.foreach(addArg(_, elemFormal))
 
+          /** Iterates through all arguments and concatenates them with a single varArg SeqLiteral
+          *  @param la: List of Arg that accumulates the Args arguments that are not varArgs up until the first varArg
+          *             is encountered among arguments and the process is then repeated.
+          *  @param counter: this counts how many Vararg arguments were added to the buffer which we pass as argumnent 
+          *                  to method argCombineVarArg.         
+          */
+          def concatVararg(listOfArgs: List[Arg], la: List[Arg], counter: Int): Unit = 
+            val elemFormal = formal.widenExpr.argTypesLo.head
+            listOfArgs match
+              case x1 :: xs =>
+                if (!xs.isEmpty && !isVarArg(x1) && !isVarArg(xs.head)) then
+                  concatVararg(xs,  la :+ x1, counter) 
+                else if(!isVarArg(x1)) then 
+                  if (xs.isEmpty || isVarArg(xs.head)) then 
+                    harmonizeSeq(la :+ x1, elemFormal)
+                    makeSeqLiteral(la.length + 1, elemFormal)
+                    concatVararg(xs, Nil, counter + 1)  
+                else if (isVarArg(x1)) then  /
+                  val seqElemFormal = defn.SeqType.appliedTo(elemFormal)  
+                  addArg(typedArg(x1, seqElemFormal), seqElemFormal)
+                  concatVararg(xs, Nil, counter + 1)  
+              case Nil => 
+                if (counter == 0) then 
+                  harmonizeSeq(listOfArgs, elemFormal)
+                  makeVarArg(args.length, elemFormal)
+                else argCombineVarArg(counter, elemFormal) 
+
           def missingArg(n: Int): Unit =
             fail(MissingArgument(methodType.paramNames(n), methString))
 
@@ -645,59 +667,9 @@ trait Applications extends Compatibility {
               case (arg @ Typed(Literal(Constant(null)), _)) :: Nil if ctx.isAfterTyper =>
                 addTyped(arg)
                 
-              case arguments => //if arguments.exists(isVarArg) => 
+              case _ => 
+                concatVararg(args, Nil, 0) 
 
-                /** Iterates through all arguments and concatenates them with a single varArg SeqLiteral
-                *  @param la: List of Arg that accumulates the Args arguments that are not varArgs up until the first varArg
-                *             is encountered among arguments and the process is then repeated.
-                *  @param counter: this counts how many Vararg arguments were added to the buffer which we pass as argumnent 
-                *                  to method argCombineVarArg.         
-                */
-                def concatVararg(listOfArgs: List[Arg], la: List[Arg], counter: Int): Unit = 
-                  val elemFormal = formal.widenExpr.argTypesLo.head
-                  listOfArgs match
-                    case x1 :: xs =>
-                      if (!xs.isEmpty && !isVarArg(x1) && !isVarArg(xs.head)) then
-                        concatVararg(xs,  la :+ x1, counter) 
-                      else if(!isVarArg(x1)) then // case (!isVarArg(x1), _ ) => // when next term is a vararhg
-                        if (xs.isEmpty || isVarArg(xs.head)) then 
-                          harmonizeSeq(la :+ x1, elemFormal)
-                          // val typedArgs =
-                          //   harmonic(harmonizeArgs, elemFormal) {
-                          //     (la :+ x1).map { e =>
-                          //       checkNoVarArg(e)
-                          //       typedArg(e, elemFormal)
-                          //     }
-                          //   }
-                          // typedArgs.foreach(addArg(_, elemFormal))
-                          makeSeqLiteral(la.length + 1, elemFormal)
-                          concatVararg(xs, Nil, counter + 1)  
-                      else if (isVarArg(x1)) then  // case(isVarArg(x1), _ ) => 
-                        val seqElemFormal = defn.SeqType.appliedTo(elemFormal)  // AppliedType(defn.SeqType, List(x)) 
-                        addArg(typedArg(x1, seqElemFormal), seqElemFormal)
-                        concatVararg(xs, Nil, counter + 1)   
-                         
-                    case Nil => 
-                      if (counter == 0) then 
-                        harmonizeSeq(listOfArgs, elemFormal)
-                        makeVarArg(args.length, elemFormal)
-                      else argCombineVarArg(counter, elemFormal) // if counter = 0 must call case _
-                
-                concatVararg(arguments, Nil, 0) 
-
-              // case arg :: Nil if isVarArg(arg) => addTyped(arg)
-              // case _ =>
-              //   val elemFormal = formal.widenExpr.argTypesLo.head
-              //   // val typedArgs =
-              //   //   harmonic(harmonizeArgs, elemFormal) {
-              //   //     args.map { arg =>
-              //   //       checkNoVarArg(arg)
-              //   //       typedArg(arg, elemFormal)
-              //   //     }
-              //   //   }
-              //   // typedArgs.foreach(addArg(_, elemFormal))
-              //   makeVarArg(args.length, elemFormal)
-            
           else args match {
             case EmptyTree :: args1 =>
               tryDefault(n, args1)
@@ -783,7 +755,7 @@ trait Applications extends Compatibility {
     final def addArg(arg: TypedArg, formal: Type): Unit = ok = ok & argOK(arg, formal)
     def makeVarArg(n: Int, elemFormal: Type): Unit = {}
     def makeSeqLiteral(n: Int, elemFormal: Type): Unit = {}
-    // def harmonizeSeq(arg: Arg, elemFormal: Type): Unit = {}
+    def harmonizeSeq(arg: Arg, elemFormal: Type): Unit = {}
     def argCombineVarArg(n: Int, elemFormal: Type): Unit = {}
     def fail(msg: Message, arg: Arg): Unit =
       ok = false
@@ -840,9 +812,7 @@ trait Applications extends Compatibility {
       val args = typedArgBuf.takeRight(n).toList
       typedArgBuf.dropRightInPlace(n)
       val elemtpt = TypeTree(elemFormal)
-      val y = seqToRepeated(SeqLiteral(args, elemtpt))
-      // println(s"form once arguments are added together to the buffer: ${y}")
-      typedArgBuf += y
+      typedArgBuf += seqToRepeated(SeqLiteral(args, elemtpt))
     
 
     def makeSeqLiteral(n: Int, elemFormal: Type): Unit = 
@@ -2382,7 +2352,9 @@ trait Applications extends Compatibility {
    *  always be the case. If that property does not hold, we risk forgetting constraints
    *  which could lead to unsoundness.
    */
-  def harmonic[T](harmonize: List[T] => List[T], pt: Type)(op: => List[T])(using Context): List[T] =
+  def harmonic[T](harmonize: List[T] => List[T], pt: Type)
+                 (op: => List[T])(using Context): List[T] =
+
     if (!isFullyDefined(pt, ForceDegree.none)) {
       val origConstraint = ctx.typerState.constraint
       val origElems = op
