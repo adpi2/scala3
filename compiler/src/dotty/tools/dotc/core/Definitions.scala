@@ -466,6 +466,7 @@ class Definitions {
       cls.entered
     cls
   }
+
   def AnyKindType: TypeRef = AnyKindClass.typeRef
 
   @tu lazy val andType: TypeSymbol = enterBinaryAlias(tpnme.AND, AndType(_, _))
@@ -543,6 +544,10 @@ class Definitions {
       List(AnyType), EmptyScope)
   @tu lazy val SingletonType: TypeRef = SingletonClass.typeRef
 
+  @tu lazy val IterableType: TypeRef = requiredClassRef("scala.collection.Iterable")
+  def IterableClass(using Context): ClassSymbol = IterableType.symbol.asClass
+      @tu lazy val Iterable_++           : Symbol = IterableClass.requiredMethod(nme.PLUSPLUS)
+
   @tu lazy val CollectionSeqType: TypeRef = requiredClassRef("scala.collection.Seq")
   @tu lazy val SeqType: TypeRef = requiredClassRef("scala.collection.immutable.Seq")
   def SeqClass(using Context): ClassSymbol = SeqType.symbol.asClass
@@ -551,7 +556,6 @@ class Definitions {
     @tu lazy val Seq_drop         : Symbol = SeqClass.requiredMethod(nme.drop)
     @tu lazy val Seq_lengthCompare: Symbol = SeqClass.requiredMethod(nme.lengthCompare, List(IntType))
     @tu lazy val Seq_length       : Symbol = SeqClass.requiredMethod(nme.length)
-    @tu lazy val Seq_++           : Symbol = SeqClass.requiredMethod(nme.PLUSPLUS)
     @tu lazy val Seq_toSeq        : Symbol = SeqClass.requiredMethod(nme.toSeq)
   @tu lazy val SeqModule: Symbol = requiredModule("scala.collection.immutable.Seq")
 

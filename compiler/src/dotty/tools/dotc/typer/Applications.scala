@@ -383,11 +383,6 @@ trait Applications extends Compatibility {
     protected def isVarArg(arg: Arg): Boolean
 
     /** If constructing trees, turn last `n` processed arguments into a
-     *  `SeqLiteral` tree with element type `elemFormal`.
-     */
-    protected def makeVarArg(n: Int, elemFormal: Type): Unit
-
-    /** If constructing trees, turn last `n` processed arguments into a
      *  `SeqLiteral` tree with element type `elemFormal' without *
      */
     protected def makeSeqLiteral(n: Int, elemFormal: Type): Unit
@@ -598,11 +593,12 @@ trait Applications extends Compatibility {
                     }
                   }
             typedArgs.foreach(addArg(_, elemFormal))
+            
 
           /** Iterates through all arguments and concatenates them with a single varArg SeqLiteral
-          *  @param la: List of Arg that accumulates the Args arguments that are not varArgs up until the first varArg
-          *             is encountered among arguments and the process is then repeated.
-          *  @param counter: this counts how many Vararg arguments were added to the buffer which we pass as argumnent 
+          *  @param la: List of Arg that accumulates the arguments that are not varArgs up until the first varArg
+              is encountered among arguments, then the process is then repeated.
+          *  @param counter: this counts how many Vararg arguments were added to the buffer which we pass as argument 
           *                  to method argCombineVarArg.         
           */
           def concatVararg(listOfArgs: List[Arg], la: List[Arg], counter: Int): Unit = 
@@ -621,10 +617,7 @@ trait Applications extends Compatibility {
                   addArg(typedArg(x1, seqElemFormal), seqElemFormal)
                   concatVararg(xs, Nil, counter + 1)  
               case Nil => 
-                if (counter == 0) then 
-                  harmonizeSeq(listOfArgs, elemFormal)
-                  makeVarArg(args.length, elemFormal)
-                else argCombineVarArg(counter, elemFormal) 
+                  argCombineVarArg(counter, elemFormal) 
 
           def missingArg(n: Int): Unit =
             fail(MissingArgument(methodType.paramNames(n), methString))
@@ -753,7 +746,6 @@ trait Applications extends Compatibility {
     protected def argType(arg: Arg, formal: Type): Type
     def typedArg(arg: Arg, formal: Type): Arg = arg
     final def addArg(arg: TypedArg, formal: Type): Unit = ok = ok & argOK(arg, formal)
-    def makeVarArg(n: Int, elemFormal: Type): Unit = {}
     def makeSeqLiteral(n: Int, elemFormal: Type): Unit = {}
     def harmonizeSeq(arg: Arg, elemFormal: Type): Unit = {}
     def argCombineVarArg(n: Int, elemFormal: Type): Unit = {}
@@ -807,14 +799,6 @@ trait Applications extends Compatibility {
     def addArg(arg: Tree, formal: Type): Unit =
       typedArgBuf += adapt(arg, formal.widenExpr)
 
-
-    def makeVarArg(n: Int, elemFormal: Type): Unit = 
-      val args = typedArgBuf.takeRight(n).toList
-      typedArgBuf.dropRightInPlace(n)
-      val elemtpt = TypeTree(elemFormal)
-      typedArgBuf += seqToRepeated(SeqLiteral(args, elemtpt))
-    
-
     def makeSeqLiteral(n: Int, elemFormal: Type): Unit = 
       val args = typedArgBuf.takeRight(n).toList
       typedArgBuf.dropRightInPlace(n)
@@ -827,13 +811,15 @@ trait Applications extends Compatibility {
           t.asInstanceOf[Typed].expr
         else t
 
-      val varArgTrees = typedArgBuf.takeRight(n)
-      typedArgBuf.dropRightInPlace(n)
       val repeatedarg =
-        seqToRepeated(varArgTrees.reduce{
-          (lh, rh) => removeRepeated(lh).select(defn.Seq_++).
-            appliedToType(elemFormal).appliedTo(removeRepeated(rh))})
-      typedArgBuf += repeatedarg
+        if (n == 0) then 
+          SeqLiteral(List.empty, TypeTree(elemFormal))   
+        else 
+          val varArgTrees = typedArgBuf.takeRight(n)
+          typedArgBuf.dropRightInPlace(n)
+          varArgTrees.map(x => removeRepeated(x)).reduce{
+            (lh, rh) => lh.select(defn.Iterable_++).appliedToType(elemFormal).appliedTo(rh)}
+      typedArgBuf += seqToRepeated(repeatedarg)
     
 
     def harmonizeArgs(args: List[TypedArg]): List[Tree] =
