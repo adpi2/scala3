@@ -25,6 +25,10 @@ object Rewrites {
     def addPatch(span: Span, replacement: String): Unit =
       pbuf += Patch(span, replacement)
 
+    def patchOver(span: Span, replacement: String): Unit =
+      pbuf.indices.reverse.find(i => span.contains(pbuf(i).span)).foreach(pbuf.remove)
+      pbuf += Patch(span, replacement)
+
     def apply(cs: Array[Char]): Array[Char] = {
       val delta = pbuf.map(_.delta).sum
       val patches = pbuf.toList.sortBy(_.span.start)
@@ -69,6 +73,14 @@ object Rewrites {
     then ctx.settings.rewrite.value.foreach(_.patched
          .getOrElseUpdate(source, new Patches(source))
          .addPatch(span, replacement)
+    )
+
+  /** Record a patch that replaces an inner patch */
+  def patchOver(source: SourceFile, span: Span, replacement: String)(using Context): Unit =
+    if ctx.reporter != Reporter.NoReporter // NoReporter is used for syntax highlighting
+    then ctx.settings.rewrite.value.foreach(_.patched
+         .getOrElseUpdate(source, new Patches(source))
+         .patchOver(span, replacement)
     )
 
   /** Patch position in `ctx.compilationUnit.source`. */
