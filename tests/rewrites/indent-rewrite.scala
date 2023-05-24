@@ -47,17 +47,41 @@ end m4
 // fix off-by-one indentation
    val x = ""
 
+  def m5(x: String): String = {
+      def inner: Boolean = {
+        true
+      }
+       x
+  }
+
+// unindent properly when needed
+  def m5(xs: Seq[String]): String = {
+    xs
+          .map {
+            x => x
+          }
+        .filter {
+          x => x.size > 0
+        }
+      println("foo")
+
+        def foo: String =
+          ""
+      foo
+  }
+
+
 // do not remove braces if closing braces not followed by new line
-def m5: String = {
+def m6: String = {
 val x = "Hi"
 x
-}; def m6(x: String): String = {
+}; def m7(x: String): String = {
 s"""Bye $x ${
   x
 }
 do not indent in a multiline string"""
 }
-  def m7 = {
+  def m8 = {
     val foo = ""
     val x = Seq(
       s"${foo}",
@@ -66,7 +90,7 @@ do not indent in a multiline string"""
   }
 
   // preserve indent of chained calls
-  def m8(xs: Seq[String]) = {
+  def m9(xs: Seq[String]) = {
     xs
       .filter {
         _ => true
@@ -76,7 +100,7 @@ do not indent in a multiline string"""
 
   // do not remove braces inside (...) or [...]
   // remove braces after =>
-  def m9(xs: List[Int]) = {
+  def m10(xs: List[Int]) = {
     println(
       xs.size match {
         case 1 =>
@@ -107,7 +131,7 @@ do not indent in a multiline string"""
     }
   }
   import reflect.Selectable.reflectiveSelectable
-  def m10(xs: List[
+  def m11(xs: List[
     Any {
       def foo: String
     }
@@ -116,7 +140,7 @@ do not indent in a multiline string"""
 
   // preserve indentation style before 'case'
   // but fix indentation inside 'case'
-  def m11(o: Option[String]) = {
+  def m12(o: Option[String]) = {
     o match
       case Some(x) => x
       case None => ""
@@ -137,7 +161,7 @@ do not indent in a multiline string"""
   object *:{
     def foo = ???
   }
-  def m12 =
+  def m13 =
     5 * {
       2
     } == 10 || {

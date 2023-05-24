@@ -770,9 +770,12 @@ object Parsers {
         case _ => false
       }
       var canRewrite = isBracesOrIndented(in.currentRegion) // test (1)
+      var innerIndent: Option[IndentWidth] = None
       val t = enclosedToIndented(LBRACE, {
         canRewrite &= in.isAfterLineEnd && in.token != RBRACE // test (2)(4)
-        try body
+        try
+          innerIndent = Some(minimumIndent)
+          body
         finally canRewrite &= in.isAfterLineEnd // test (3)
       })
       canRewrite &= (in.isAfterLineEnd || in.token == EOF || statCtdTokens.contains(in.token)) // test (5)
@@ -792,9 +795,8 @@ object Parsers {
         // patch over the added indentation to remove braces
         patchOver(source, Span(startOpening, endOpening), openingPatchStr)
         patchOver(source, Span(startClosing, endClosing), "")
-      else
-        // no need to outdent the next line
-        maximumIndent = None
+        // force outdentation of token after }
+        maximumIndent = innerIndent
       t
     }
 
@@ -815,14 +817,10 @@ object Parsers {
       minimumIndent =
         if enclosingIndent < in.currentRegion.indentWidth then
           in.currentRegion.indentWidth
-        else if
-          in.token == CASE &&
+        else if in.token == CASE &&
           in.currentRegion.indentWidth == in.currentRegion.enclosing.indentWidth
-        then
-          // we do not need to increment before CASE
-          enclosingIndent
-        else
-          enclosingIndent.increment
+        then enclosingIndent
+        else enclosingIndent.increment
       try body
       finally
         maximumIndent = Some(minimumIndent)
@@ -832,11 +830,11 @@ object Parsers {
       if in.isAfterLineEnd && !in.isNewLine && in.token != OUTDENT && in.token != INDENT then
         val currentIndent = in.indentWidth(in.offset)
         val indentEndOffset = in.lineOffset + currentIndent.size
-        if
-          maximumIndent.exists(max => currentIndent >= max) ||
-          !(currentIndent >= minimumIndent) ||
-          currentIndent.isClose(minimumIndent)
-        then
+        val needsOutdent = maximumIndent.exists: max =>
+          currentIndent >= max || (in.token != DOT && currentIndent > minimumIndent)
+        val offByOne =
+          currentIndent != minimumIndent && currentIndent.isClose(minimumIndent)
+        if needsOutdent || !(currentIndent >= minimumIndent) || offByOne then
           patch(Span(in.lineOffset, indentEndOffset), minimumIndent.toPrefix)
         // no need to outdent anymore
         maximumIndent = None
