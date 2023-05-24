@@ -179,4 +179,25 @@ m10 { 5 } {
     && {
       false
     }
+
+  // do not remove braces in sequence of blocks
+  def m17(using ctx: String) = println(ctx)
+  {
+    given String = "foo"
+    m17
+  }
+  {
+    given String = "bar"
+    m17
+  }
+  def m18(x: String) = {
+    {
+      given String = "foo"
+      m17
+    }
+    {
+      given String = "bar"
+      m17
+    }
+  }
 }

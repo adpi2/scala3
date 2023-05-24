@@ -97,8 +97,9 @@ do not indent in a multiline string"""
           xs match
             case 1 :: Nil => "1"
             case _ => s"${xs.head} :: Nil"
-        case _ =>
+        case _ => {
           "xs"
+        }
     }
     )
     println(
@@ -113,8 +114,9 @@ do not indent in a multiline string"""
         x
     }
     ).map:
-      x =>
+      x => {
         x
+      }
   import reflect.Selectable.reflectiveSelectable
   def m13(xs: List[
     Any {
@@ -154,3 +156,23 @@ do not indent in a multiline string"""
     true
     `&&` :
       false
+
+  // do not remove braces in sequence of blocks
+  def m17(using ctx: String) = println(ctx)
+  {
+    given String = "foo"
+    m17
+  }
+  {
+    given String = "bar"
+    m17
+  }
+  def m18(x: String) =
+    {
+      given String = "foo"
+      m17
+    }
+    {
+      given String = "bar"
+      m17
+    }
