@@ -140,11 +140,17 @@ do not indent in a multiline string"""
     case Some(x) =>
       x
 
-  /** suround operators with backticks */
+  // add backticks around operator
   object `*:` :
     def foo = ???
   def m15 =
     5 * {
       2
     } == 10 `||` :
+      false
+
+  // leading infix operator
+  def m16 =
+    true
+    `&&` :
       false

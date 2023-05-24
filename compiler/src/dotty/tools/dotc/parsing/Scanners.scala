@@ -438,7 +438,7 @@ object Scanners {
         // in backticks and is a binary operator. Hence, `x` is not classified as a
         // leading infix operator.
         def assumeStartsExpr(lexeme: TokenData) =
-          (canStartExprTokens.contains(lexeme.token) || lexeme.token == COLONeol)
+          (canStartExprTokens.contains(lexeme.token) || lexeme.token == COLONfollow)
           && (!lexeme.isOperator || nme.raw.isUnary(lexeme.name))
         val lookahead = LookaheadScanner()
         lookahead.allowLeadingInfixOperators = false

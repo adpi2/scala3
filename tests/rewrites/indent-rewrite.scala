@@ -162,7 +162,7 @@ m10 { 5 } {
     }
   }
 
-  /** suround operators with backticks */
+  // add backticks around operator
   object *:{
     def foo = ???
   }
@@ -170,6 +170,13 @@ m10 { 5 } {
     5 * {
       2
     } == 10 || {
+      false
+    }
+
+  // leading infix operator
+  def m16 =
+    true
+    && {
       false
     }
 }
