@@ -161,12 +161,25 @@ m10 { 5 } {
     x
     }
   }
+  def m15(xs: List[Int]): String = {
+    xs match {
+      case 1 :: tail =>
+        if tail.size == 0 then
+          println("log")
+      "foo"
+      case _ :: tail => {
+        if tail.size == 0 then
+          println("log")
+      }
+      "bar"
+    }
+  }
 
   // add backticks around operator
   object *:{
     def foo = ???
   }
-  def m15 =
+  def m16 =
     5 * {
       2
     } == 10 || {
@@ -174,30 +187,30 @@ m10 { 5 } {
     }
 
   // leading infix operator
-  def m16 =
+  def m17 =
     true
     && {
       false
     }
 
   // do not remove braces in sequence of blocks
-  def m17(using ctx: String) = println(ctx)
+  def m18(using ctx: String) = println(ctx)
   {
     given String = "foo"
-    m17
+    m18
   }
   {
     given String = "bar"
-    m17
+    m18
   }
-  def m18(x: String) = {
+  def m19(x: String) = {
     {
       given String = "foo"
-      m17
+      m18
     }
     {
       given String = "bar"
-      m17
+      m18
     }
   }
 }

@@ -560,11 +560,13 @@ object Parsers {
     def inBrackets[T](body: => T): T = enclosed(LBRACKET, body)
 
     def inBracesOrIndented[T](body: => T, inStatSeq: Boolean = false, rewriteWithColon: Boolean = false): T =
+      val followsArrow = in.last.token == ARROW
       if in.token == INDENT then
         val rewriteToBraces = in.rewriteNoIndent
-          && !testChars(in.lastOffset - 3, " =>") // braces are always optional after `=>` so none should be inserted
+          && !followsArrow // braces are always optional after `=>` so none should be inserted
+        val rewriteToIndent = in.rewriteToIndent && !followsArrow
         if rewriteToBraces then indentedToBraces(body)
-        else if in.rewriteToIndent then enclosedToIndented(INDENT, body)
+        else if rewriteToIndent then enclosedToIndented(INDENT, body)
         else enclosed(INDENT, body)
       else
         if in.rewriteToIndent then
@@ -2887,7 +2889,7 @@ object Parsers {
                         |an indented case.""")
           expr()
         else
-          if in.rewriteToIndent && (in.token != LBRACE && in.token != INDENT) then
+          if in.rewriteToIndent then
             toIndentedRegion(block())
           else block()
       })
