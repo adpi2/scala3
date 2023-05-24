@@ -44,7 +44,10 @@ Hello, World!
 // indent end marker
 end m4
 
-// do not indent if closing braces not followed by new line
+// fix off-by-one indentation
+   val x = ""
+
+// do not remove braces if closing braces not followed by new line
 def m5: String = {
 val x = "Hi"
 x

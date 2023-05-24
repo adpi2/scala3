@@ -819,7 +819,7 @@ object Parsers {
           in.token == CASE &&
           in.currentRegion.indentWidth == in.currentRegion.enclosing.indentWidth
         then
-          // if CASE we do not necessarily need to increment: keep current style
+          // we do not need to increment before CASE
           enclosingIndent
         else
           enclosingIndent.increment
@@ -834,7 +834,8 @@ object Parsers {
         val indentEndOffset = in.lineOffset + currentIndent.size
         if
           maximumIndent.exists(max => currentIndent >= max) ||
-          !(currentIndent >= minimumIndent)
+          !(currentIndent >= minimumIndent) ||
+          currentIndent.isClose(minimumIndent)
         then
           patch(Span(in.lineOffset, indentEndOffset), minimumIndent.toPrefix)
         // no need to outdent anymore

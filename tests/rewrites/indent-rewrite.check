@@ -38,7 +38,10 @@ Hello, World!
 // indent end marker
   end m4
 
-// do not indent if closing braces not followed by new line
+// fix off-by-one indentation
+  val x = ""
+
+// do not remove braces if closing braces not followed by new line
   def m5: String = {
     val x = "Hi"
     x
@@ -61,19 +64,44 @@ do not indent in a multiline string"""
         _ => true
       .map(s => s * 2)
 
-  // remove braces inside (...) and after =>
-  def m9(xs: List[Int]) = (xs.size match {
-    case 1 =>
-      xs match
-        case 1 :: Nil => "1"
-        case _ => s"${xs.head} :: Nil"
-    case _ =>
-      "xs"
-  })
+  // do not remove braces inside (...) or [...]
+  // remove braces after =>
+  def m9(xs: List[Int]) =
+    println(
+      xs.size match {
+        case 1 =>
+          xs match
+            case 1 :: Nil => "1"
+            case _ => s"${xs.head} :: Nil"
+        case _ =>
+          "xs"
+      }
+    )
+    println(
+      if (xs.size > 0) {
+        "foo"
+      } else {
+        "bar"
+      }
+    )
+    xs.map(
+      x => {
+        x
+      }
+    ).map:
+      x =>
+        x
+  import reflect.Selectable.reflectiveSelectable
+  def m10(xs: List[
+    Any {
+      def foo: String
+    }
+  ]) =
+    xs.map(x => x.foo)
 
   // preserve indentation style before 'case'
   // but fix indentation inside 'case'
-  def m10(o: Option[String]) =
+  def m11(o: Option[String]) =
     o match
       case Some(x) => x
       case None => ""
@@ -91,7 +119,7 @@ do not indent in a multiline string"""
   /** suround operators with backticks */
   object `*:` :
     def foo = ???
-  def m11 =
+  def m12 =
     5 * {
       2
     } == 10 `||` :
