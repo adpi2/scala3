@@ -62,9 +62,58 @@ do not indent in a multiline string"""
     )
   }
 
+  // preserve indent of chained calls
+  def m8(xs: Seq[String]) = {
+    xs
+      .filter {
+        _ => true
+      }
+      .map(s => s * 2)
+  }
+
+  // do not remove braces inside (...) or [...]
+  // remove braces after =>
+  def m9(xs: List[Int]) = {
+    println(
+      xs.size match {
+        case 1 =>
+          xs match {
+            case 1 :: Nil => "1"
+            case _ => s"${xs.head} :: Nil"
+          }
+        case _ => {
+          "xs"
+        }
+      }
+    )
+    println(
+      if (xs.size > 0) {
+        "foo"
+      } else {
+        "bar"
+      }
+    )
+    xs.map(
+      x => {
+        x
+      }
+    ).map {
+      x => {
+        x
+      }
+    }
+  }
+  import reflect.Selectable.reflectiveSelectable
+  def m10(xs: List[
+    Any {
+      def foo: String
+    }
+  ]) =
+    xs.map(x => x.foo)
+
   // preserve indentation style before 'case'
   // but fix indentation inside 'case'
-  def m9(o: Option[String]) = {
+  def m11(o: Option[String]) = {
     o match
       case Some(x) => x
       case None => ""
@@ -81,20 +130,11 @@ do not indent in a multiline string"""
     }
   }
 
-  // preserve indent of chained calls
-  def m8(xs: Seq[String]) = {
-    xs
-      .filter {
-        _ => true
-      }
-      .map(s => s * 2)
-  }
-
   /** suround operators with backticks */
   object *:{
     def foo = ???
   }
-  def m9 =
+  def m12 =
     5 * {
       2
     } == 10 || {

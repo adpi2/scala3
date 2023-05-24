@@ -54,9 +54,26 @@ do not indent in a multiline string"""
       ""
     )
 
+  // preserve indent of chained calls
+  def m8(xs: Seq[String]) =
+    xs
+      .filter:
+        _ => true
+      .map(s => s * 2)
+
+  // remove braces inside (...) and after =>
+  def m9(xs: List[Int]) = (xs.size match {
+    case 1 =>
+      xs match
+        case 1 :: Nil => "1"
+        case _ => s"${xs.head} :: Nil"
+    case _ =>
+      "xs"
+  })
+
   // preserve indentation style before 'case'
   // but fix indentation inside 'case'
-  def m9(o: Option[String]) =
+  def m10(o: Option[String]) =
     o match
       case Some(x) => x
       case None => ""
@@ -71,17 +88,10 @@ do not indent in a multiline string"""
     case Some(x) =>
       x
 
-  // preserve indent of chained calls
-  def m8(xs: Seq[String]) =
-    xs
-      .filter:
-        _ => true
-      .map(s => s * 2)
-
   /** suround operators with backticks */
   object `*:` :
     def foo = ???
-  def m9 =
+  def m11 =
     5 * {
       2
     } == 10 `||` :

@@ -757,9 +757,6 @@ object Parsers {
      *   4. there is at least one token between the braces
      *   5. the closing brace is also at the end of the line, or it is followed by one of
      *      `then`, `else`, `do`, `catch`, `finally`, `yield`, or `match`.
-     *   6. the opening brace does not follow a `=>`. The reason for this condition is that
-     *      rewriting back to braces does not work after `=>` (since in most cases braces are omitted
-     *      after a `=>` it would be annoying if braces were inserted).
      */
     def bracesToIndented[T](body: => T, rewriteWithColon: Boolean): T = {
       val lastSaved = in.last.saveCopy
@@ -767,13 +764,12 @@ object Parsers {
       val colonRequired = rewriteWithColon || underColonSyntax
       val (startOpening, endOpening) = startingElimRegion(colonRequired)
       val isOutermost = in.currentRegion.isOutermost
-      def allBraces(r: Region): Boolean = r match {
-        case r: Indented => r.isOutermost || allBraces(r.enclosing)
-        case r: InBraces => allBraces(r.enclosing)
+      def isBracesOrIndented(r: Region): Boolean = r match {
+        case r: Indented => true
+        case r: InBraces => true
         case _ => false
       }
-      var canRewrite = allBraces(in.currentRegion) && // test (1)
-        !testChars(in.lastOffset - 3, " =>") // test(6)
+      var canRewrite = isBracesOrIndented(in.currentRegion) // test (1)
       val t = enclosedToIndented(LBRACE, {
         canRewrite &= in.isAfterLineEnd && in.token != RBRACE // test (2)(4)
         try body
