@@ -761,6 +761,7 @@ object Parsers {
      *   5. the closing brace is also at the end of the line, or it is followed by one of
      *      `then`, `else`, `do`, `catch`, `finally`, `yield`, or `match`.
      *   6. the opening brace does not follow a closing `}`
+     *   7. last token is not a leading operator
      */
     def bracesToIndented[T](body: => T, rewriteWithColon: Boolean): T = {
       val lastSaved = in.last.saveCopy
@@ -773,7 +774,10 @@ object Parsers {
         case r: InBraces => true
         case _ => false
       }
-      var canRewrite = isBracesOrIndented(in.currentRegion) && lastSaved.token != RBRACE // test (1)(6)
+      val followsLeadingOperator = lastSaved.isOperator && lastSaved.isAfterLineEnd
+      var canRewrite = isBracesOrIndented(in.currentRegion) && // test (1)
+        lastSaved.token != RBRACE && // test (6)
+        !followsLeadingOperator // test (7)
       var innerIndent: Option[IndentWidth] = None
       val t = enclosedToIndented(LBRACE, {
         canRewrite &= in.isAfterLineEnd && in.token != RBRACE // test (2)(4)
@@ -833,6 +837,7 @@ object Parsers {
         maximumIndent = Some(minimumIndent)
         minimumIndent = enclosingIndent
 
+    /** when rewriting to indent, check that indentaton is correct or patch */
     def patchIndent(): Unit =
       if in.isAfterLineEnd && !in.isNewLine && in.token != OUTDENT && in.token != INDENT then
         val currentIndent = in.indentWidth(in.offset)

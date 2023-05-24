@@ -154,8 +154,9 @@ do not indent in a multiline string"""
   // leading infix operator
   def m16 =
     true
-    `&&` :
+    && {
       false
+    }
 
   // do not remove braces in sequence of blocks
   def m17(using ctx: String) = println(ctx)
