@@ -1,10 +1,10 @@
 // A collection of patterns/bugs found when rewriting the community build to indent
 
-trait A {
+trait C1 {
 
-  class B
+  class CC1
 // do not remove braces if empty region
-class C {
+class CC2 {
 
 }
 // do not remove braces if open brace is not followed by new line
@@ -240,4 +240,17 @@ m10 { 5 } {
       m18
     }
   }
+}
+
+// indent template after self type
+class C2 { self =>
+val x = ""
+}
+trait C3 {
+  self =>
+val x = ""
+}
+case class C4() {
+self =>
+  val y = ""
 }

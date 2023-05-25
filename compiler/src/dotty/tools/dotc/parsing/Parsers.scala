@@ -4278,7 +4278,7 @@ object Parsers {
             nextToken()
           else
             syntaxError(em"`=>` expected after self type")
-          indentedRegionAfterArrow(makeSelfDef(selfName, selfTpt))
+          makeSelfDef(selfName, selfTpt)
         }
       else EmptyValDef
 
@@ -4295,23 +4295,28 @@ object Parsers {
      */
     def templateStatSeq(): (ValDef, List[Tree]) = checkNoEscapingPlaceholders {
       val stats = new ListBuffer[Tree]
+      val startsAfterLineEnd = in.isAfterLineEnd
       val self = selfType()
-      while
-        var empty = false
-        if (in.token == IMPORT)
-          stats ++= importClause()
-        else if (in.token == EXPORT)
-          stats ++= exportClause()
-        else if isIdent(nme.extension) && followingIsExtension() then
-          stats += extension()
-        else if (isDefIntro(modifierTokensOrCase))
-          stats +++= defOrDcl(in.offset, defAnnotsMods(modifierTokens))
-        else if (isExprIntro)
-          stats += expr1(inStatSeq = true)
-        else
-          empty = true
-        statSepOrEnd(stats, noPrevStat = empty)
-      do ()
+      def loop =
+        while
+          var empty = false
+          if (in.token == IMPORT)
+            stats ++= importClause()
+          else if (in.token == EXPORT)
+            stats ++= exportClause()
+          else if isIdent(nme.extension) && followingIsExtension() then
+            stats += extension()
+          else if (isDefIntro(modifierTokensOrCase))
+            stats +++= defOrDcl(in.offset, defAnnotsMods(modifierTokens))
+          else if (isExprIntro)
+            stats += expr1(inStatSeq = true)
+          else
+            empty = true
+          statSepOrEnd(stats, noPrevStat = empty)
+        do ()
+      if self != null && !startsAfterLineEnd then
+        indentedRegionAfterArrow(loop)
+      else loop
       (self, if stats.isEmpty then List(EmptyTree) else stats.toList)
     }
 
