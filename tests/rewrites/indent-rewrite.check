@@ -10,7 +10,7 @@ trait A:
 // do not remove braces if open brace is not followed by new line
   def m1(x: Int) =
   { x
-    .toString
+  .toString
   }
 // add indent to pass an argument (fewer braces)
   def m2: String =
@@ -86,7 +86,34 @@ do not indent in a multiline string"""
     xs
       .filter:
         _ => true
-      .map(s => s * 2)
+    xs
+      .map { x =>
+        val y =
+          if (x == "") "empty"
+          else x.size.toString
+        val z = x + y
+        z
+      }
+      .map { x => xs }.flatMap { xs => xs.map { x =>
+        val y =
+          if (x == "") "empty"
+          else x.size.toString
+        val z = x + y
+        z
+      }}
+      .map:
+        x => val y =
+          if (x == "") "empty"
+          else x.size.toString
+        val z = x + y
+        z
+      .map:
+        x =>
+          val y =
+            if (x == "") "empty"
+            else x.size.toString
+          val z = x + y
+          z
 
   // do not remove braces inside (...) or [...]
   // remove braces after =>
@@ -143,14 +170,12 @@ do not indent in a multiline string"""
       x
   def m15(xs: List[Int]): String =
     xs match
-      case 1 :: tail =>
-        if tail.size == 0 then
-          println("log")
-        "foo"
       case _ :: tail => {
           if tail.size == 0 then
             println("log")
         }
+        "foo"
+      case Nil =>
         "bar"
 
   // add backticks around operator

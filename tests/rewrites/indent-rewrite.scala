@@ -100,7 +100,36 @@ m10 { 5 } {
       .filter {
         _ => true
       }
-      .map(s => s * 2)
+      xs
+      .map { x =>
+        val y =
+          if (x == "") "empty"
+          else x.size.toString
+        val z = x + y
+        z
+      }
+      .map { x => xs }.flatMap { xs => xs.map { x =>
+        val y =
+          if (x == "") "empty"
+          else x.size.toString
+        val z = x + y
+        z
+      }}
+      .map {
+        x => val y =
+          if (x == "") "empty"
+          else x.size.toString
+        val z = x + y
+        z
+      }
+      .map {
+        x =>
+        val y =
+          if (x == "") "empty"
+          else x.size.toString
+        val z = x + y
+        z
+      }
   }
 
   // do not remove braces inside (...) or [...]
@@ -163,14 +192,12 @@ m10 { 5 } {
   }
   def m15(xs: List[Int]): String = {
     xs match {
-      case 1 :: tail =>
-        if tail.size == 0 then
-          println("log")
-      "foo"
       case _ :: tail => {
         if tail.size == 0 then
           println("log")
       }
+      "foo"
+      case Nil =>
       "bar"
     }
   }

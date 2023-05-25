@@ -566,13 +566,11 @@ object Parsers {
           && !followsArrow // braces are always optional after `=>` so none should be inserted
         val rewriteToIndent = in.rewriteToIndent && !followsArrow
         if rewriteToBraces then indentedToBraces(body)
-        else if rewriteToIndent then enclosedToIndented(INDENT, body)
+        else if rewriteToIndent then enclosed(INDENT, toIndentedRegion(body))
         else enclosed(INDENT, body)
       else
         if in.rewriteToIndent then
-          // do not remove braces in sequence of blocks
-          if inStatSeq then enclosedToIndented(LBRACE, body)
-          else bracesToIndented(body, rewriteWithColon)
+          bracesToIndented(body, inStatSeq, rewriteWithColon)
         else inBraces(body)
 
     def inDefScopeBraces[T](body: => T, inStatSeq: Boolean = false, rewriteWithColon: Boolean = false): T =
@@ -764,29 +762,34 @@ object Parsers {
      *      `then`, `else`, `do`, `catch`, `finally`, `yield`, or `match`.
      *   6. the opening brace does not follow a closing `}`
      *   7. last token is not a leading operator
+     *   8. not a block in a sequence of statements
      */
-    def bracesToIndented[T](body: => T, rewriteWithColon: Boolean): T = {
+    def bracesToIndented[T](body: => T, inStatSeq: Boolean, rewriteWithColon: Boolean): T = {
       val lastSaved = in.last.saveCopy
       val underColonSyntax = possibleColonOffset == in.lastOffset
       val colonRequired = rewriteWithColon || underColonSyntax
       val (startOpening, endOpening) = startingElimRegion(colonRequired)
       val isOutermost = in.currentRegion.isOutermost
-      def isBracesOrIndented(r: Region): Boolean = r match {
+      def isBracesOrIndented(r: Region): Boolean = r match
         case r: Indented => true
         case r: InBraces => true
         case _ => false
-      }
       val followsLeadingOperator = lastSaved.isOperator && lastSaved.isAfterLineEnd
       var canRewrite = isBracesOrIndented(in.currentRegion) && // test (1)
         lastSaved.token != RBRACE && // test (6)
-        !followsLeadingOperator // test (7)
+        !followsLeadingOperator && // test (7)
+        !inStatSeq // test (8)
       var innerIndent: Option[IndentWidth] = None
-      val t = enclosedToIndented(LBRACE, {
-        canRewrite &= in.isAfterLineEnd && in.token != RBRACE // test (2)(4)
-        try
-          innerIndent = Some(minimumIndent)
+      val t = enclosed(LBRACE, {
+        if in.isAfterLineEnd && in.token != RBRACE then // test (2)(4)
+          toIndentedRegion:
+            try
+              innerIndent = Some(minimumIndent)
+              body
+            finally canRewrite &= in.isAfterLineEnd // test (3)
+        else
+          canRewrite = false
           body
-        finally canRewrite &= in.isAfterLineEnd // test (3)
       })
       canRewrite &= (in.isAfterLineEnd || in.token == EOF || statCtdTokens.contains(in.token)) // test (5)
       def isOperatorFollowedByColon =
@@ -819,9 +822,12 @@ object Parsers {
      * to ensure an indent region is properly closed by outdentation */
     var maximumIndent: Option[IndentWidth] = None
 
-    /** compute required indentation in enclosed region */
-    def enclosedToIndented[T](tok: Token, body: => T): T =
-      enclosed(tok, toIndentedRegion(body))
+    /** When rewriting to indent, make sure there is an indent after a `=>\n` */
+    def indentedRegionAfterArrow[T](body: => T, inCase: Boolean = false): T =
+      if in.rewriteToIndent && (inCase || in.isAfterLineEnd) then
+        assert(in.last.isArrow || in.last.token == SELFARROW)
+        toIndentedRegion(body)
+      else body
 
     /** compute required indentation to indent region properly */
     def toIndentedRegion[T](body: => T): T =
@@ -2464,7 +2470,7 @@ object Parsers {
           nextToken()
         else
           accept(ARROW)
-        val body =
+        val body = indentedRegionAfterArrow:
           if location == Location.InBlock then block()
           else if location == Location.InColonArg && in.token == INDENT then blockExpr()
           else expr()
@@ -2882,17 +2888,16 @@ object Parsers {
         (pattern(), guard())
       }
       CaseDef(pat, grd, atSpan(accept(ARROW)) {
-        if exprOnly then
-          if in.indentSyntax && in.isAfterLineEnd && in.token != INDENT then
-            warning(em"""Misleading indentation: this expression forms part of the preceding catch case.
-                        |If this is intended, it should be indented for clarity.
-                        |Otherwise, if the handler is intended to be empty, use a multi-line catch with
-                        |an indented case.""")
-          expr()
-        else
-          if in.rewriteToIndent then
-            toIndentedRegion(block())
+        indentedRegionAfterArrow({
+          if exprOnly then
+            if in.indentSyntax && in.isAfterLineEnd && in.token != INDENT then
+              warning(em"""Misleading indentation: this expression forms part of the preceding catch case.
+                          |If this is intended, it should be indented for clarity.
+                          |Otherwise, if the handler is intended to be empty, use a multi-line catch with
+                          |an indented case.""")
+            expr()
           else block()
+        }, inCase = true)
       })
     }
 
@@ -2910,7 +2915,7 @@ object Parsers {
         }
       }
       CaseDef(pat, EmptyTree, atSpan(accept(ARROW)) {
-        val t = rejectWildcardType(typ())
+        val t = indentedRegionAfterArrow(rejectWildcardType(typ()), inCase = true)
         if in.token == SEMI then nextToken()
         newLinesOptWhenFollowedBy(CASE)
         t
@@ -4273,7 +4278,7 @@ object Parsers {
             nextToken()
           else
             syntaxError(em"`=>` expected after self type")
-          makeSelfDef(selfName, selfTpt)
+          indentedRegionAfterArrow(makeSelfDef(selfName, selfTpt))
         }
       else EmptyValDef
 
