@@ -844,8 +844,9 @@ object Parsers {
       if in.isAfterLineEnd && !in.isNewLine && in.token != OUTDENT && in.token != INDENT then
         val currentIndent = in.indentWidth(in.offset)
         val indentEndOffset = in.lineOffset + currentIndent.size
+        def isDotOrClosing = (closingParens + DOT).contains(in.token)
         val needsOutdent = maximumIndent.exists: max =>
-          currentIndent >= max || (in.token != DOT && currentIndent > minimumIndent)
+          currentIndent >= max || (!isDotOrClosing  && currentIndent > minimumIndent)
         val offByOne =
           currentIndent != minimumIndent && currentIndent.isClose(minimumIndent)
         if needsOutdent || !(currentIndent >= minimumIndent) || offByOne then

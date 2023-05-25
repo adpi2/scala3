@@ -100,19 +100,19 @@ do not indent in a multiline string"""
         case _ => {
             "xs"
           }
-    }
+      }
     )
     println(
       if (xs.size > 0) {
         "foo"
-    } else {
+      } else {
         "bar"
-    }
+      }
     )
     xs.map(
       x => {
         x
-    }
+      }
     ).map:
       x => {
         x
@@ -121,7 +121,7 @@ do not indent in a multiline string"""
   def m13(xs: List[
     Any {
       def foo: String
-  }
+    }
   ]) =
     xs.map(x => x.foo)
 
