@@ -73,7 +73,7 @@ object ConstFold:
     private def withFoldedType(c: Constant | Null): T =
       if c == null then tree else tree.withType(ConstantType(c)).asInstanceOf[T]
 
-  private def foldUnop(op: Name, x: Constant): Constant | Null = (op, x.tag) match {
+  private def foldUnop(op: Name, x: Constant): Constant | Null = (op, x.tag) match
     case (nme.UNARY_!, BooleanTag) => Constant(!x.booleanValue)
 
     case (nme.UNARY_~ , IntTag    ) => Constant(~x.intValue)
@@ -90,12 +90,11 @@ object ConstFold:
     case (nme.UNARY_- , DoubleTag ) => Constant(-x.doubleValue)
 
     case _ => null
-  }
 
   /** These are local helpers to keep foldBinop from overly taxing the
    *  optimizer.
    */
-  private def foldBooleanOp(op: Name, x: Constant, y: Constant): Constant | Null = op match {
+  private def foldBooleanOp(op: Name, x: Constant, y: Constant): Constant | Null = op match
     case nme.ZOR  => Constant(x.booleanValue | y.booleanValue)
     case nme.OR   => Constant(x.booleanValue | y.booleanValue)
     case nme.XOR  => Constant(x.booleanValue ^ y.booleanValue)
@@ -104,8 +103,7 @@ object ConstFold:
     case nme.EQ   => Constant(x.booleanValue == y.booleanValue)
     case nme.NE   => Constant(x.booleanValue != y.booleanValue)
     case _ => null
-  }
-  private def foldSubrangeOp(op: Name, x: Constant, y: Constant): Constant | Null = op match {
+  private def foldSubrangeOp(op: Name, x: Constant, y: Constant): Constant | Null = op match
     case nme.OR  => Constant(x.intValue | y.intValue)
     case nme.XOR => Constant(x.intValue ^ y.intValue)
     case nme.AND => Constant(x.intValue & y.intValue)
@@ -124,8 +122,7 @@ object ConstFold:
     case nme.DIV => Constant(x.intValue / y.intValue)
     case nme.MOD => Constant(x.intValue % y.intValue)
     case _ => null
-  }
-  private def foldLongOp(op: Name, x: Constant, y: Constant): Constant | Null = op match {
+  private def foldLongOp(op: Name, x: Constant, y: Constant): Constant | Null = op match
     case nme.OR  => Constant(x.longValue | y.longValue)
     case nme.XOR => Constant(x.longValue ^ y.longValue)
     case nme.AND => Constant(x.longValue & y.longValue)
@@ -144,8 +141,7 @@ object ConstFold:
     case nme.DIV => Constant(x.longValue / y.longValue)
     case nme.MOD => Constant(x.longValue % y.longValue)
     case _ => null
-  }
-  private def foldFloatOp(op: Name, x: Constant, y: Constant): Constant | Null = op match {
+  private def foldFloatOp(op: Name, x: Constant, y: Constant): Constant | Null = op match
     case nme.EQ  => Constant(x.floatValue == y.floatValue)
     case nme.NE  => Constant(x.floatValue != y.floatValue)
     case nme.LT  => Constant(x.floatValue < y.floatValue)
@@ -158,8 +154,7 @@ object ConstFold:
     case nme.DIV => Constant(x.floatValue / y.floatValue)
     case nme.MOD => Constant(x.floatValue % y.floatValue)
     case _ => null
-  }
-  private def foldDoubleOp(op: Name, x: Constant, y: Constant): Constant | Null = op match {
+  private def foldDoubleOp(op: Name, x: Constant, y: Constant): Constant | Null = op match
     case nme.EQ  => Constant(x.doubleValue == y.doubleValue)
     case nme.NE  => Constant(x.doubleValue != y.doubleValue)
     case nme.LT  => Constant(x.doubleValue < y.doubleValue)
@@ -172,13 +167,11 @@ object ConstFold:
     case nme.DIV => Constant(x.doubleValue / y.doubleValue)
     case nme.MOD => Constant(x.doubleValue % y.doubleValue)
     case _ => null
-  }
-  private def foldStringOp(op: Name, x: Constant, y: Constant): Constant | Null = op match {
+  private def foldStringOp(op: Name, x: Constant, y: Constant): Constant | Null = op match
     case nme.ADD => Constant(x.stringValue + y.stringValue)
     case nme.EQ  => Constant(x.stringValue == y.stringValue)
     case nme.NE  => Constant(x.stringValue != y.stringValue)
     case _ => null
-  }
 
   private def foldNullOp(op: Name, x: Constant, y: Constant): Constant | Null=
     assert(x.tag == NullTag || y.tag == NullTag)
@@ -203,7 +196,7 @@ object ConstFold:
       case  StringTag                             => foldStringOp(op, x, y)
       case  NullTag                               => foldNullOp(op, x, y)
       case  _                                     => null
-      catch case ex: ArithmeticException => null // the code will crash at runtime,
+    catch case ex: ArithmeticException => null // the code will crash at runtime,
                                                  // but that is better than the
                                                  // compiler itself crashing
   end foldBinop
