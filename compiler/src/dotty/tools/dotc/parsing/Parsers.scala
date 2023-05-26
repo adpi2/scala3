@@ -727,26 +727,13 @@ object Parsers {
       t
     end indentedToBraces
 
-    /** The region to eliminate when replacing an opening `(` or `{` that ends a line.
-     *  The `(` or `{` is at in.offset.
-     */
-    def startingElimRegion(colonRequired: Boolean): (Offset, Offset) =
-      val (start, end) = blankLinesAround(in.offset, in.offset + 1)
-      if testChar(end, Chars.LF) then
-        if testChar(start - 1, Chars.LF) && !colonRequired then
-          (start, end + 1) // skip the whole line
-        else (start, end) // skip the end of line
-      else (start, in.offset + 1) // skip from last to end of token
-
-    /** The region to eliminate when replacing a closing `)` or `}` that starts a new line
-     *  The `)` or `}` precedes in.lastOffset.
-     */
-    def closingElimRegion(): (Offset, Offset) =
-      val (start, end) = blankLinesAround(in.lastOffset - 1, in.lastOffset)
+    /** The region to eliminate when replacing a brace or parenthesis that ends a line */
+    def elimRegion(offset: Offset): (Offset, Offset) =
+      val (start, end) = blankLinesAround(offset, offset + 1)
       if testChar(end, Chars.LF) then
         if testChar(start - 1, Chars.LF) then (start, end + 1) // skip the whole line
         else (start, end) // skip the end of line
-      else (in.lastOffset - 1, end) // skip from token to next
+      else (offset, end) // skip from last to end of token
 
     /** Expand the current span to the surrounding blank lines */
     def blankLinesAround(start: Offset, end: Offset): (Offset, Offset) =
@@ -763,21 +750,25 @@ object Parsers {
      *   6. the opening brace does not follow a closing `}`
      *   7. last token is not a leading operator
      *   8. not a block in a sequence of statements
+     *   9. cannot rewrite to colon after a NEWLINE, e.g.
+     *     true ||
+     *     { // NEWLINE inserted between || and {
+     *       false
+     *     }
      */
     def bracesToIndented[T](body: => T, inStatSeq: Boolean, rewriteWithColon: Boolean): T = {
       val lastSaved = in.last.saveCopy
+      val lastOffsetSaved = in.lastOffset
       val underColonSyntax = possibleColonOffset == in.lastOffset
       val colonRequired = rewriteWithColon || underColonSyntax
-      val (startOpening, endOpening) = startingElimRegion(colonRequired)
-      val isOutermost = in.currentRegion.isOutermost
+      val (startOpening, endOpening) = elimRegion(in.offset)
       def isBracesOrIndented(r: Region): Boolean = r match
         case r: Indented => true
         case r: InBraces => true
         case _ => false
-      val followsLeadingOperator = lastSaved.isOperator && lastSaved.isAfterLineEnd
       var canRewrite = isBracesOrIndented(in.currentRegion) && // test (1)
         lastSaved.token != RBRACE && // test (6)
-        !followsLeadingOperator && // test (7)
+        !(lastSaved.isOperator && lastSaved.isAfterLineEnd) && // test (7)
         !inStatSeq // test (8)
       var innerIndent: Option[IndentWidth] = None
       val t = enclosed(LBRACE, {
@@ -791,23 +782,18 @@ object Parsers {
           canRewrite = false
           body
       })
-      canRewrite &= (in.isAfterLineEnd || in.token == EOF || statCtdTokens.contains(in.token)) // test (5)
-      def isOperatorFollowedByColon =
-        lastSaved.name != null &&
-        startOpening == lastSaved.offset + lastSaved.name.length &&
-        Chars.isOperatorPart(lastSaved.name.last)
+      canRewrite &= (in.isAfterLineEnd || in.token == EOF || statCtdTokens.contains(in.token)) && // test (5)
+        (!colonRequired || !lastSaved.isNewLine) // test (9)
       if canRewrite && (!underColonSyntax || Feature.fewerBracesEnabled) then
-        val openingPatchStr =
-          if !colonRequired then ""
-          else if isOperatorFollowedByColon then
-            // surround previous ident with backticks
-            patch(Span(lastSaved.offset, lastSaved.offset + lastSaved.name.length), s"`${lastSaved.name}`")
-            " :"
-          else ":"
-        val (startClosing, endClosing) = closingElimRegion()
+        val (startClosing, endClosing) = elimRegion(in.last.offset)
         // patch over the added indentation to remove braces
-        patchOver(source, Span(startOpening, endOpening), openingPatchStr)
+        patchOver(source, Span(startOpening, endOpening), "")
         patchOver(source, Span(startClosing, endClosing), "")
+        if colonRequired then
+          // add backticks around operator and add colon
+          if lastSaved.isOperator then
+            patch(Span(lastSaved.offset, lastSaved.offset + lastSaved.name.length), s"`${lastSaved.name}` :")
+          else patch(Span(lastOffsetSaved), ":")
         // force outdentation of token after }
         maximumIndent = innerIndent
       else
@@ -883,7 +869,7 @@ object Parsers {
       val preFill = if (closingStartsLine || endStr.isEmpty) "" else " "
       val postFill = if (in.lastOffset == in.offset) " " else ""
       val (startClosing, endClosing) =
-        if (closingStartsLine && endStr.isEmpty) closingElimRegion()
+        if (closingStartsLine && endStr.isEmpty) elimRegion(in.last.offset)
         else (in.lastOffset - 1, in.lastOffset)
       patch(source, Span(startClosing, endClosing), s"$preFill$endStr$postFill")
     }
