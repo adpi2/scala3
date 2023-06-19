@@ -127,8 +127,10 @@ case class AggregateClassPath(aggregates: Seq[ClassPath]) extends ClassPath:
       cp <- aggregates
       entry <- getEntries(cp) if !seenNames.contains(entry.name)
     }
+    {
       entriesBuffer += entry
       seenNames += entry.name
+    }
     entriesBuffer.toIndexedSeq
 
 object AggregateClassPath:

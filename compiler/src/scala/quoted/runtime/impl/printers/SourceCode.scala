@@ -98,7 +98,7 @@ object SourceCode:
 
     def printTree(tree: Tree)(using elideThis: Option[Symbol] = None): this.type = tree match
       case PackageObject(body)=>
-        printTree(body) // Print package object
+          printTree(body) // Print package object
 
       case PackageClause(Ident(name), (inner @ PackageClause(_, _)) :: Nil) if name != "<empty>" && PackageObject.unapply(inner).isEmpty =>
         // print inner package as `package outer.inner { ... }`

@@ -43,6 +43,7 @@ object RefChecks:
       defaultGetterClass <- List(clazz, clazz.companionModule.moduleClass);
       if defaultGetterClass.isClass
     }
+    {
       val defaultGetterNames = defaultGetterClass.asClass.memberNames(defaultMethodFilter)
       val defaultMethodNames = defaultGetterNames map { _ replace {
         case DefaultGetterName(methName, _) => methName
@@ -60,6 +61,7 @@ object RefChecks:
                   if owners.forall(_ == clazz) then "."
                   else i".\nThe members with defaults are defined in ${owners.map(_.showLocated).mkString("", " and ", ".")}"}",
               clazz.srcPos)
+    }
 
     // Check for doomed attempt to overload applyDynamic
     if (clazz derivesFrom defn.DynamicClass)

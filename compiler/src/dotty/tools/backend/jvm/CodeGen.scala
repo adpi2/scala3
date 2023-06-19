@@ -103,7 +103,7 @@ class CodeGen(val int: DottyBackendInterface, val primitives: DottyPrimitives)( 
     GeneratedDefs(generatedClasses.toList, generatedTasty.toList)
 
   // Creates a callback that will be evaluated in PostProcessor after creating a file
-  private def onFileCreated(cls: ClassNode, claszSymbol: Symbol, sourceFile: interfaces.SourceFile): AbstractFile => Unit = clsFile =>
+  private def onFileCreated(cls: ClassNode, claszSymbol: Symbol, sourceFile: interfaces.SourceFile): AbstractFile => Unit = clsFile => {
     val (fullClassName, isLocal) = atPhase(sbtExtractDependenciesPhase):
       (ExtractDependencies.classNameAsString(claszSymbol), claszSymbol.isLocal)
 
@@ -116,6 +116,7 @@ class CodeGen(val int: DottyBackendInterface, val primitives: DottyPrimitives)( 
       val cb = ctx.sbtCallback
       if (isLocal) cb.generatedLocalClass(jSourceFile, clsFile.file)
       else cb.generatedNonLocalClass(jSourceFile, clsFile.file, className, fullClassName)
+  }
 
   /** Convert a `dotty.tools.io.AbstractFile` into a
    *  `dotty.tools.dotc.interfaces.AbstractFile`.

@@ -375,7 +375,6 @@ object Scanners:
     /** Produce next token, filling TokenData fields of Scanner.
      */
     def nextToken(): Unit =
-      last.copyFrom(this)
       val lastToken = token
       val lastName = name
       adjustSepRegions(lastToken)
@@ -748,6 +747,9 @@ object Scanners:
           if lookahead.token == EOF
           || source.offsetToLine(lookahead.offset) > endLine
           then return true
+
+          if lookahead.token == LBRACE && rewriteToIndent then
+            patch(Span(offset, offset + 3), s"`end`")
       false
 
     /** Is there a blank line between the current token and the last one?
@@ -1454,7 +1456,7 @@ object Scanners:
 
    /* Initialization: read first char, then first token */
     nextChar()
-    nextToken()
+    (this: @unchecked).nextToken()
     currentRegion = topLevelRegion(indentWidth(offset))
   end Scanner
 

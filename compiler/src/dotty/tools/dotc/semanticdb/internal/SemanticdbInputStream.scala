@@ -312,13 +312,18 @@ class SemanticdbInputStream private (buffer: Array[Byte], input: InputStream):
       val buffer: Array[Byte] = this.buffer
       var pos: Int = bufferPos
       var i: Int = 0
-      while (i < 10)
-        if (buffer(({
-          pos += 1; pos - 1
-        })) >= 0)
-          bufferPos = pos
-          return
-        i += 1; i - 1
+      while (i < 10) {
+        {
+          if (buffer(({
+            pos += 1; pos - 1
+          })) >= 0)
+            bufferPos = pos
+            return
+        }
+        ({
+          i += 1; i - 1
+        })
+      }
     skipRawVarintSlowPath
 
   @throws(classOf[IOException])
