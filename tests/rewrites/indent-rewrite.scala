@@ -182,6 +182,7 @@ m10 { 5 } {
     o match
     case Some(x) => x
     case None => ""
+    end match
 
     o match {
     case None =>
@@ -249,6 +250,15 @@ m10 { 5 } {
       m18
     }
   }
+
+  // back-quote end indent before match
+  def m20 =
+    val end = "Foo"
+    end match {
+      case "Foo" =>
+      case _ =>
+    }
+    end take 3
 }
 
 // indent template after self type

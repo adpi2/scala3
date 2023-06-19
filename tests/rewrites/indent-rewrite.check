@@ -162,6 +162,7 @@ do not indent in a multiline string"""
     o match
     case Some(x) => x
     case None => ""
+    end match
 
     o match
     case None =>
@@ -220,6 +221,14 @@ do not indent in a multiline string"""
       given String = "bar"
       m18
     }
+
+  // back-quote end indent before match
+  def m20 =
+    val end = "Foo"
+    `end` match
+      case "Foo" =>
+      case _ =>
+    end take 3
 
 // indent template after self type
 class C2 { self =>

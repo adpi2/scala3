@@ -344,7 +344,7 @@ object MarkupParsers:
           assert(ts.length == 1, "Require one tree")
           ts(0)
       },
-      msg => parser.incompleteInputError(msg.toMessage)
+    msg => parser.incompleteInputError(msg.toMessage)
     )
 
     /** @see xmlPattern. resynchronizes after successful parse
@@ -359,7 +359,7 @@ object MarkupParsers:
           xSpaceOpt()
           tree
       },
-      msg => parser.syntaxError(msg.toMessage, curOffset)
+    msg => parser.syntaxError(msg.toMessage, curOffset)
     )
 
     def escapeToScala[A](op: => A, kind: String): A =
