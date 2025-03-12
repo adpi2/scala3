@@ -1,7 +1,6 @@
-import scala.util.Properties
-import sbt.url
-import java.net.URL
+package sbt
 
+import scala.util.Properties
 
 // https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/variables#default-environment-variables
 object GithubEnv {
